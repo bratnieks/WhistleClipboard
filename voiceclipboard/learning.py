@@ -9,7 +9,7 @@ import numpy as np
 
 from voiceclipboard.config import AppConfig
 from voiceclipboard.features import FeatureVector, extract_features
-from voiceclipboard.model import ACTIONS, LearnedSoundModel
+from voiceclipboard.model import LearnedSoundModel
 
 
 @dataclass

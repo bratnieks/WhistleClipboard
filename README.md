@@ -2,6 +2,8 @@
 
 VoiceClipboard is a small, clean, hackable Python CLI that listens to the microphone, detects short whistle-like spikes, and maps them to clipboard shortcuts.
 
+This is an early-stage alpha project. Suggestions, experiments, bug reports, and contributions are very welcome.
+
 Current macOS behavior:
 
 - Classic mode without learned profiles:

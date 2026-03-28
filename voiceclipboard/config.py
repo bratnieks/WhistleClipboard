@@ -16,8 +16,8 @@ class AppConfig:
     double_spike_window_s: float = 0.50
     action_cooldown_s: float = 0.90
     calibration_seconds: float = 3.0
-    release_threshold: float = 0.022
-    release_peak_threshold: float = 0.05
+    release_threshold: float = 0.035
+    release_peak_threshold: float = 0.08
     event_silence_s: float = 0.14
     max_event_duration_s: float = 0.90
     learn_sample_count: int = 6
