@@ -86,6 +86,14 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+Fastest local workflow:
+
+```bash
+./run.sh learn copy
+./run.sh learn paste
+./run.sh run
+```
+
 2. Give your terminal app:
 
 - Microphone permission
@@ -94,19 +102,19 @@ pip install -e .
 3. Teach a sound for copy:
 
 ```bash
-whistleclipboard --learn copy
+./run.sh learn copy
 ```
 
 4. Teach a different sound for paste:
 
 ```bash
-whistleclipboard --learn paste
+./run.sh learn paste
 ```
 
 5. Start detection mode:
 
 ```bash
-whistleclipboard --debug
+./run.sh run
 ```
 
 6. Focus another app and use it normally. No terminal prompt is shown by default.
@@ -114,7 +122,7 @@ whistleclipboard --debug
 7. If you want interactive reinforcement in the terminal, use:
 
 ```bash
-whistleclipboard --debug --feedback
+./run.sh feedback
 ```
 
 If no profiles exist yet, the app falls back to classic mode:
@@ -144,6 +152,12 @@ Installed CLI:
 whistleclipboard
 ```
 
+Convenience script:
+
+```bash
+./run.sh help
+```
+
 Useful options:
 
 ```bash
@@ -153,6 +167,15 @@ python main.py --calibrate 4
 python main.py --learn copy
 python main.py --learn paste
 whistleclipboard --learn copy
+```
+
+Wrapper script:
+
+```bash
+./run.sh run
+./run.sh learn copy
+./run.sh learn paste
+./run.sh feedback
 ```
 
 CLI flags:
