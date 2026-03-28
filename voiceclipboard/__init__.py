@@ -1,0 +1,1 @@
+"""VoiceClipboard package."""
