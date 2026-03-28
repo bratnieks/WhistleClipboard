@@ -119,7 +119,6 @@ If no profiles exist yet, the app falls back to classic mode:
 
 - one spike -> copy
 - two quick spikes -> paste
-
 ## macOS Permissions
 
 On macOS, the terminal app used to run the CLI needs:
@@ -269,11 +268,7 @@ If the answer is:
 - `y` or `Enter`
   the detected sample reinforces the predicted action
 - `n`
-  the CLI asks for a single key:
-  `c` for copy
-  `p` for paste
-  `Enter` to skip
-  and then updates the saved profiles
+  the app automatically assumes the opposite action and updates the learned profile
 
 ## Tuning
 
@@ -298,7 +293,6 @@ python main.py --debug
 Then whistle a few times and adjust thresholds based on the logs.
 
 The current local defaults are tuned to be more sensitive to softer whistles than the first MVP build.
-
 ## Portability Notes
 
 The audio, feature extraction and model parts are already cross-platform friendly.

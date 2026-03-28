@@ -120,7 +120,6 @@ def run_learn_mode(config: AppConfig, action: str) -> int:
     finally:
         listener.stop()
 
-
 def run_learned_detection(config: AppConfig, feedback_enabled: bool = False) -> int:
     from voiceclipboard.actions import ActionExecutor
     from voiceclipboard.audio import MicrophoneListener
@@ -223,7 +222,6 @@ def run_classic_detection(config: AppConfig) -> int:
         return 0
     finally:
         listener.stop()
-
 
 def run(
     config: AppConfig, learn_action: str | None = None, feedback_enabled: bool = False

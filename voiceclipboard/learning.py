@@ -137,6 +137,19 @@ def resolve_feedback_action(
     return corrected_action
 
 
+def format_feature_vector(feature: FeatureVector) -> str:
+    return (
+        f"rms={feature.rms:.3f} "
+        f"freq={feature.dominant_frequency:.1f}Hz "
+        f"duration={feature.duration:.3f}s "
+        f"zcr={feature.zero_crossing_rate:.3f}"
+    )
+
+
+def opposite_action(action: str) -> str:
+    return "paste" if action == "copy" else "copy"
+
+
 def read_choice(prompt: str, valid_choices: set[str]) -> str | None:
     if not sys.stdin.isatty():
         return None
@@ -148,8 +161,6 @@ def read_choice(prompt: str, valid_choices: set[str]) -> str | None:
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
         try:
-            # Drop any pending pasted or buffered terminal input before
-            # opening the single-key prompt.
             termios.tcflush(fd, termios.TCIFLUSH)
             print(prompt, end="", flush=True)
             tty.setraw(fd)
@@ -181,16 +192,3 @@ def read_choice(prompt: str, valid_choices: set[str]) -> str | None:
 
     print("[FEEDBACK] Ignoring invalid input.")
     return None
-
-
-def format_feature_vector(feature: FeatureVector) -> str:
-    return (
-        f"rms={feature.rms:.3f} "
-        f"freq={feature.dominant_frequency:.1f}Hz "
-        f"duration={feature.duration:.3f}s "
-        f"zcr={feature.zero_crossing_rate:.3f}"
-    )
-
-
-def opposite_action(action: str) -> str:
-    return "paste" if action == "copy" else "copy"

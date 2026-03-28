@@ -54,7 +54,6 @@ class ProfileStore:
         profiles[action] = []
         self.save(profiles)
 
-
 class LearnedSoundModel:
     def __init__(self, store: ProfileStore) -> None:
         self.store = store
@@ -76,7 +75,6 @@ class LearnedSoundModel:
     def reset_action(self, action: str) -> None:
         self._profiles[action] = []
         self.store.save(self._profiles)
-
     def stats_for(self, action: str) -> ActionStats | None:
         samples = self._profiles.get(action, [])
         if not samples:
