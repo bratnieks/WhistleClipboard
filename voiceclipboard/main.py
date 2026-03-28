@@ -6,6 +6,8 @@ from typing import Iterable
 
 from voiceclipboard.config import AppConfig
 
+LEARNABLE_ACTIONS = ("copy", "paste")
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Whistle-driven clipboard shortcuts.")
@@ -27,6 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
         const=3.0,
         default=0.0,
         help="Listen to ambient sound for a few seconds and suggest thresholds.",
+    )
+    parser.add_argument(
+        "--learn",
+        choices=LEARNABLE_ACTIONS,
+        help="Record a set of training samples for the given action.",
     )
     return parser
 
@@ -67,13 +74,104 @@ def log_debug(rms: float, peak: float, ratio: float) -> None:
     print(f"[DEBUG] rms={rms:.3f} peak={peak:.3f} hf_ratio={ratio:.3f}")
 
 
-def run(config: AppConfig) -> int:
+def run_learn_mode(config: AppConfig, action: str) -> int:
+    from voiceclipboard.audio import MicrophoneListener
+    from voiceclipboard.detector import SpikeDetector
+    from voiceclipboard.learning import EventRecorder, learn_action_samples
+    from voiceclipboard.model import LearnedSoundModel, ProfileStore
+
+    listener = MicrophoneListener(config)
+    spike_detector = SpikeDetector(config)
+    recorder = EventRecorder(config, spike_detector)
+    model = LearnedSoundModel(ProfileStore(config.profile_path))
+
+    try:
+        listener.start()
+        print(f"[LEARN MODE] Recording samples for {action.upper()}")
+        print(f"[LEARN MODE] Profiles will be stored at {config.profile_path}")
+        learn_action_samples(
+            action=action,
+            listener=listener,
+            recorder=recorder,
+            model=model,
+            sample_rate=config.sample_rate,
+            sample_count=config.learn_sample_count,
+            timeout=config.learn_timeout_s,
+        )
+        print(f"[LEARN MODE] {action.upper()} now has {model.sample_count(action)} samples.")
+        return 0
+    except KeyboardInterrupt:
+        print("\n[STOPPED]")
+        return 0
+    finally:
+        listener.stop()
+
+
+def run_learned_detection(config: AppConfig) -> int:
+    from voiceclipboard.actions import ActionExecutor
+    from voiceclipboard.audio import MicrophoneListener
+    from voiceclipboard.detector import SpikeDetector
+    from voiceclipboard.features import extract_features
+    from voiceclipboard.learning import EventRecorder, feedback_loop, format_feature_vector
+    from voiceclipboard.model import LearnedSoundModel, ProfileStore
+
+    # Delay audio imports until runtime so --help still works on machines
+    # where native audio deps are not installed yet.
+    listener = MicrophoneListener(config)
+    spike_detector = SpikeDetector(config)
+    recorder = EventRecorder(config, spike_detector)
+    actions = ActionExecutor()
+    model = LearnedSoundModel(ProfileStore(config.profile_path))
+
+    try:
+        listener.start()
+
+        if config.calibration_seconds > 0:
+            calibrate(listener, spike_detector, config.calibration_seconds)
+
+        print("[LISTENING]")
+        print(f"[MODEL] Loading profiles from {config.profile_path}")
+
+        while True:
+            event = recorder.wait_for_event(listener, timeout=None)
+            if event is None:
+                continue
+
+            feature = extract_features(event.samples, config.sample_rate)
+            action_name, distance = model.classify(feature)
+
+            if action_name is None:
+                print("[MODEL] No learned profiles found. Run with --learn copy or --learn paste first.")
+                return 1
+
+            print("[DETECTED SPIKE]")
+            if config.debug:
+                print(f"[MATCH] distance={distance:.3f}")
+                print(f"[MATCH] {format_feature_vector(feature)}")
+
+            if distance is not None and distance > config.match_distance_threshold:
+                print(
+                    "[MODEL] Closest profile was too far away "
+                    f"(distance={distance:.3f}). Ignoring event."
+                )
+                continue
+
+            trigger_action(action_name, actions)
+            print(f"Detected: {action_name.upper()}")
+            feedback_loop(model, action_name, feature)
+
+    except KeyboardInterrupt:
+        print("\n[STOPPED]")
+        return 0
+    finally:
+        listener.stop()
+
+
+def run_classic_detection(config: AppConfig) -> int:
     from voiceclipboard.actions import ActionExecutor
     from voiceclipboard.audio import MicrophoneListener
     from voiceclipboard.detector import PatternDetector, SpikeDetector
 
-    # Delay audio imports until runtime so --help still works on machines
-    # where native audio deps are not installed yet.
     listener = MicrophoneListener(config)
     spike_detector = SpikeDetector(config)
     pattern_detector = PatternDetector(config)
@@ -84,9 +182,8 @@ def run(config: AppConfig) -> int:
 
         if config.calibration_seconds > 0:
             calibrate(listener, spike_detector, config.calibration_seconds)
-            print("[LISTENING]")
-        else:
-            print("[LISTENING]")
+        print("[LISTENING]")
+        print("[MODEL] No learned profiles found, using classic single/double spike mode.")
 
         while True:
             chunk = listener.read(timeout=1.0)
@@ -110,6 +207,18 @@ def run(config: AppConfig) -> int:
         return 0
     finally:
         listener.stop()
+
+
+def run(config: AppConfig, learn_action: str | None = None) -> int:
+    from voiceclipboard.model import LearnedSoundModel, ProfileStore
+
+    if learn_action is not None:
+        return run_learn_mode(config, learn_action)
+
+    model = LearnedSoundModel(ProfileStore(config.profile_path))
+    if model.has_profiles():
+        return run_learned_detection(config)
+    return run_classic_detection(config)
 
 
 def trigger_action(action_name: str, actions: ActionExecutor) -> None:
@@ -138,4 +247,4 @@ def main(argv: Iterable[str] | None = None) -> int:
     else:
         config.calibration_seconds = 0.0
 
-    return run(config)
+    return run(config, learn_action=args.learn)

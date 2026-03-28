@@ -43,8 +43,12 @@ Located in `voiceclipboard/config.py`:
 - `high_freq_ratio_threshold`
 - `high_freq_min_hz`
 - `high_freq_max_hz`
+- `release_threshold`
+- `release_peak_threshold`
+- `max_event_duration_s`
 - `double_spike_window_s`
 - `action_cooldown_s`
+- `match_distance_threshold`
 
 ## Common Scenarios
 
@@ -78,6 +82,15 @@ Increase:
 
 - `action_cooldown_s`
 - `min_spike_gap_s`
+
+### Learned matches are wrong too often
+
+Try:
+
+- recording cleaner samples with `--learn`
+- collecting more samples for both actions
+- lowering `match_distance_threshold` to reject uncertain matches
+- using more distinct sounds for `copy` and `paste`
 
 ## Practical Advice
 

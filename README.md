@@ -4,8 +4,11 @@ VoiceClipboard is a small, clean, hackable Python CLI that listens to the microp
 
 Current macOS behavior:
 
-- One spike -> `Cmd+C`
-- Two spikes in quick sequence -> `Cmd+V`
+- Classic mode without learned profiles:
+  one spike -> `Cmd+C`
+  two spikes in quick sequence -> `Cmd+V`
+- Learned mode with profiles:
+  the closest learned sound triggers `copy` or `paste`
 
 The project is intentionally simple:
 
@@ -15,11 +18,16 @@ The project is intentionally simple:
 - low dependency count
 - easy to tune
 
-## MVP Features
+## Features
 
 - Continuous microphone listening with `sounddevice`
 - Lightweight frequency-aware spike detection with `numpy`
-- Pattern detection for single and double triggers
+- Classic pattern detection for single and double triggers
+- Interactive learning mode for custom sound triggers
+- Feature extraction using RMS, dominant frequency, duration and zero crossing rate
+- Local profile storage in `~/.voiceclipboard/profiles.json`
+- Learned detection with a lightweight statistical distance model
+- Feedback loop to reinforce or correct detections
 - Cooldown protection to avoid repeated accidental shortcuts
 - Debug logging for live tuning
 - Basic ambient calibration mode
@@ -40,7 +48,10 @@ VoiceClipboard/
     ├── audio.py
     ├── config.py
     ├── detector.py
-    └── main.py
+    ├── features.py
+    ├── learning.py
+    ├── main.py
+    └── model.py
 ```
 
 ## Requirements
@@ -57,6 +68,7 @@ Create a virtual environment and install dependencies:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ## macOS Permissions
@@ -76,12 +88,21 @@ Run the tool:
 python main.py
 ```
 
+Installed CLI:
+
+```bash
+voiceclipboard
+```
+
 Useful options:
 
 ```bash
 python main.py --debug
 python main.py --threshold 0.09
 python main.py --calibrate 4
+python main.py --learn copy
+python main.py --learn paste
+voiceclipboard --learn copy
 ```
 
 CLI flags:
@@ -92,6 +113,45 @@ CLI flags:
   Prints per-chunk RMS, peak and high-frequency ratio values.
 - `--calibrate [seconds]`
   Samples the environment first and prints suggested thresholds.
+- `--learn {copy,paste}`
+  Records a set of training samples for the given action.
+
+## Learn Mode
+
+Teach the tool a custom sound for `copy`:
+
+```bash
+python main.py --learn copy
+```
+
+Teach the tool a custom sound for `paste`:
+
+```bash
+python main.py --learn paste
+```
+
+During learning the app:
+
+- records 6 samples by default
+- waits for a short spike-like sound each round
+- extracts the same feature vector used during detection
+- stores samples locally in `~/.voiceclipboard/profiles.json`
+
+Stored JSON shape:
+
+```json
+{
+  "copy": [
+    {
+      "rms": 0.11,
+      "dominant_frequency": 2142.4,
+      "duration": 0.31,
+      "zero_crossing_rate": 0.22
+    }
+  ],
+  "paste": []
+}
+```
 
 ## Example Output
 
@@ -121,6 +181,44 @@ Then the pattern detector applies timing rules:
 - if no second spike arrives in time, copy is fired
 - cooldown suppresses repeated accidental activations
 
+## Learned Detection
+
+If learned profiles exist, VoiceClipboard switches to learned mode automatically.
+
+For each captured sound event it:
+
+- captures the short event after spike onset
+- extracts:
+  RMS
+  dominant frequency
+  duration
+  zero crossing rate
+- compares that vector against the learned `copy` and `paste` profiles
+- triggers the closest valid match
+
+The model stays intentionally lightweight:
+
+- local JSON storage
+- raw sample vectors per action
+- per-action mean and standard deviation
+- normalized distance matching
+
+## Feedback Loop
+
+After each learned trigger the CLI asks:
+
+```text
+Detected: COPY
+Correct? (y/n)
+```
+
+If the answer is:
+
+- `y`
+  the detected sample reinforces the predicted action
+- `n`
+  the CLI asks whether the sample should belong to `copy` or `paste` and updates the saved profiles
+
 ## Tuning
 
 Most useful knobs live in `voiceclipboard/config.py`:
@@ -128,8 +226,11 @@ Most useful knobs live in `voiceclipboard/config.py`:
 - `threshold`
 - `peak_threshold`
 - `high_freq_ratio_threshold`
+- `release_threshold`
+- `release_peak_threshold`
 - `double_spike_window_s`
 - `action_cooldown_s`
+- `match_distance_threshold`
 
 Start with:
 
@@ -142,7 +243,7 @@ Then whistle a few times and adjust thresholds based on the logs.
 
 ## Portability Notes
 
-The audio and detection parts are already cross-platform friendly.
+The audio, feature extraction and model parts are already cross-platform friendly.
 
 The only platform-specific part is shortcut execution in `voiceclipboard/actions.py`.
 

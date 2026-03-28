@@ -7,7 +7,7 @@ VoiceClipboard is split into small modules so the audio pipeline stays easy to u
 Flow:
 
 ```text
-Microphone -> Audio chunks -> Spike detector -> Pattern detector -> Shortcut action
+Microphone -> Audio chunks -> Spike detector -> Event capture -> Features -> Model -> Shortcut action
 ```
 
 ## Modules
@@ -58,6 +58,39 @@ Contains the signal and timing logic.
 - applies a debounce gap between spikes
 - applies an action cooldown
 
+### `voiceclipboard/features.py`
+
+Turns a captured sound event into a compact feature vector:
+
+- RMS energy
+- dominant frequency
+- duration
+- zero crossing rate
+
+These features are cheap to compute and expressive enough for a lightweight local matcher.
+
+### `voiceclipboard/model.py`
+
+Owns learned profile storage and classification.
+
+Responsibilities:
+
+- load and save JSON profiles from `~/.voiceclipboard/profiles.json`
+- keep per-action sample vectors
+- compute per-action mean and standard deviation
+- classify new events using normalized feature distance
+
+### `voiceclipboard/learning.py`
+
+Owns the interactive learning flow.
+
+Responsibilities:
+
+- capture a short event after spike onset
+- gather training samples for `copy` and `paste`
+- run the post-trigger feedback loop
+- reinforce or correct profiles over time
+
 ### `voiceclipboard/actions.py`
 
 Owns OS-level actions.
@@ -74,9 +107,8 @@ Coordinates the full runtime:
 
 - parse CLI args
 - optionally calibrate
-- start the microphone listener
-- analyze chunks
-- run pattern detection
+- optionally run learn mode
+- choose learned or classic detection flow
 - trigger copy or paste
 
 ## Runtime Notes
@@ -84,6 +116,7 @@ Coordinates the full runtime:
 - Audio is captured in small blocks for low latency.
 - Detection is chunk-based, not stream-ML-based.
 - Imports for audio-heavy modules happen inside `run()` so `python main.py --help` works even when audio dependencies are not fully available.
+- Learned profile storage stays local and JSON-based for easy inspection and editing.
 
 ## Design Goals
 

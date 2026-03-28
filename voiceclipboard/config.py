@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -15,4 +16,14 @@ class AppConfig:
     double_spike_window_s: float = 0.50
     action_cooldown_s: float = 0.90
     calibration_seconds: float = 3.0
+    release_threshold: float = 0.035
+    release_peak_threshold: float = 0.08
+    event_silence_s: float = 0.14
+    max_event_duration_s: float = 0.90
+    learn_sample_count: int = 6
+    learn_timeout_s: float = 8.0
+    match_distance_threshold: float = 8.0
+    profile_path: Path = field(
+        default_factory=lambda: Path.home() / ".voiceclipboard" / "profiles.json"
+    )
     debug: bool = False
