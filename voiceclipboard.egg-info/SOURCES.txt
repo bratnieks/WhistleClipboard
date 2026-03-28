@@ -1,0 +1,17 @@
+README.md
+setup.py
+voiceclipboard/__init__.py
+voiceclipboard/actions.py
+voiceclipboard/audio.py
+voiceclipboard/config.py
+voiceclipboard/detector.py
+voiceclipboard/features.py
+voiceclipboard/learning.py
+voiceclipboard/main.py
+voiceclipboard/model.py
+voiceclipboard.egg-info/PKG-INFO
+voiceclipboard.egg-info/SOURCES.txt
+voiceclipboard.egg-info/dependency_links.txt
+voiceclipboard.egg-info/entry_points.txt
+voiceclipboard.egg-info/requires.txt
+voiceclipboard.egg-info/top_level.txt

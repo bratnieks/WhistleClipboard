@@ -1,0 +1,3 @@
+[console_scripts]
+voiceclipboard = voiceclipboard.main:main
+
