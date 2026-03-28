@@ -1,0 +1,1 @@
+"""WhistleClipboard package."""

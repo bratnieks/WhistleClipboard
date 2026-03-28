@@ -4,7 +4,7 @@ import argparse
 import statistics
 from typing import Iterable
 
-from voiceclipboard.config import AppConfig
+from whistleclipboard.config import AppConfig
 
 LEARNABLE_ACTIONS = ("copy", "paste")
 
@@ -80,10 +80,10 @@ def log_debug(rms: float, peak: float, ratio: float) -> None:
 
 
 def run_learn_mode(config: AppConfig, action: str) -> int:
-    from voiceclipboard.audio import MicrophoneListener
-    from voiceclipboard.detector import SpikeDetector
-    from voiceclipboard.learning import EventRecorder, learn_action_samples
-    from voiceclipboard.model import LearnedSoundModel, ProfileStore
+    from whistleclipboard.audio import MicrophoneListener
+    from whistleclipboard.detector import SpikeDetector
+    from whistleclipboard.learning import EventRecorder, learn_action_samples
+    from whistleclipboard.model import LearnedSoundModel, ProfileStore
 
     listener = MicrophoneListener(config)
     spike_detector = SpikeDetector(config)
@@ -121,12 +121,12 @@ def run_learn_mode(config: AppConfig, action: str) -> int:
         listener.stop()
 
 def run_learned_detection(config: AppConfig, feedback_enabled: bool = False) -> int:
-    from voiceclipboard.actions import ActionExecutor
-    from voiceclipboard.audio import MicrophoneListener
-    from voiceclipboard.detector import SpikeDetector
-    from voiceclipboard.features import extract_features
-    from voiceclipboard.learning import EventRecorder, format_feature_vector, resolve_feedback_action
-    from voiceclipboard.model import LearnedSoundModel, ProfileStore
+    from whistleclipboard.actions import ActionExecutor
+    from whistleclipboard.audio import MicrophoneListener
+    from whistleclipboard.detector import SpikeDetector
+    from whistleclipboard.features import extract_features
+    from whistleclipboard.learning import EventRecorder, format_feature_vector, resolve_feedback_action
+    from whistleclipboard.model import LearnedSoundModel, ProfileStore
 
     # Delay audio imports until runtime so --help still works on machines
     # where native audio deps are not installed yet.
@@ -183,9 +183,9 @@ def run_learned_detection(config: AppConfig, feedback_enabled: bool = False) -> 
 
 
 def run_classic_detection(config: AppConfig) -> int:
-    from voiceclipboard.actions import ActionExecutor
-    from voiceclipboard.audio import MicrophoneListener
-    from voiceclipboard.detector import PatternDetector, SpikeDetector
+    from whistleclipboard.actions import ActionExecutor
+    from whistleclipboard.audio import MicrophoneListener
+    from whistleclipboard.detector import PatternDetector, SpikeDetector
 
     listener = MicrophoneListener(config)
     spike_detector = SpikeDetector(config)
@@ -226,7 +226,7 @@ def run_classic_detection(config: AppConfig) -> int:
 def run(
     config: AppConfig, learn_action: str | None = None, feedback_enabled: bool = False
 ) -> int:
-    from voiceclipboard.model import LearnedSoundModel, ProfileStore
+    from whistleclipboard.model import LearnedSoundModel, ProfileStore
 
     if learn_action is not None:
         return run_learn_mode(config, learn_action)

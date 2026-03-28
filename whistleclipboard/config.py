@@ -25,6 +25,6 @@ class AppConfig:
     learn_max_attempts: int = 18
     match_distance_threshold: float = 9.5
     profile_path: Path = field(
-        default_factory=lambda: Path.home() / ".voiceclipboard" / "profiles.json"
+        default_factory=lambda: Path.home() / ".whistleclipboard" / "profiles.json"
     )
     debug: bool = False

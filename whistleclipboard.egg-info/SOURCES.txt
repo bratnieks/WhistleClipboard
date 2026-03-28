@@ -1,0 +1,17 @@
+README.md
+setup.py
+whistleclipboard/__init__.py
+whistleclipboard/actions.py
+whistleclipboard/audio.py
+whistleclipboard/config.py
+whistleclipboard/detector.py
+whistleclipboard/features.py
+whistleclipboard/learning.py
+whistleclipboard/main.py
+whistleclipboard/model.py
+whistleclipboard.egg-info/PKG-INFO
+whistleclipboard.egg-info/SOURCES.txt
+whistleclipboard.egg-info/dependency_links.txt
+whistleclipboard.egg-info/entry_points.txt
+whistleclipboard.egg-info/requires.txt
+whistleclipboard.egg-info/top_level.txt

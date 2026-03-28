@@ -36,7 +36,7 @@ Share of spectral energy in the configured high-frequency band.
 
 ## Most Important Config Values
 
-Located in `voiceclipboard/config.py`:
+Located in `whistleclipboard/config.py`:
 
 - `threshold`
 - `peak_threshold`

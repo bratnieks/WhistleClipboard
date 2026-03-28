@@ -2,7 +2,7 @@
 
 ## Overview
 
-VoiceClipboard is split into small modules so the audio pipeline stays easy to understand and modify.
+WhistleClipboard is split into small modules so the audio pipeline stays easy to understand and modify.
 
 Flow:
 
@@ -16,7 +16,7 @@ Microphone -> Audio chunks -> Spike detector -> Event capture -> Features -> Mod
 
 Small root entrypoint that forwards execution into the package.
 
-### `voiceclipboard/config.py`
+### `whistleclipboard/config.py`
 
 Central configuration values for:
 
@@ -26,7 +26,7 @@ Central configuration values for:
 - timing windows
 - debug mode
 
-### `voiceclipboard/audio.py`
+### `whistleclipboard/audio.py`
 
 Owns microphone capture.
 
@@ -39,7 +39,7 @@ Responsibilities:
 
 This keeps the listener responsive and prevents unbounded memory growth.
 
-### `voiceclipboard/detector.py`
+### `whistleclipboard/detector.py`
 
 Contains the signal and timing logic.
 
@@ -58,7 +58,7 @@ Contains the signal and timing logic.
 - applies a debounce gap between spikes
 - applies an action cooldown
 
-### `voiceclipboard/features.py`
+### `whistleclipboard/features.py`
 
 Turns a captured sound event into a compact feature vector:
 
@@ -69,18 +69,18 @@ Turns a captured sound event into a compact feature vector:
 
 These features are cheap to compute and expressive enough for a lightweight local matcher.
 
-### `voiceclipboard/model.py`
+### `whistleclipboard/model.py`
 
 Owns learned profile storage and classification.
 
 Responsibilities:
 
-- load and save JSON profiles from `~/.voiceclipboard/profiles.json`
+- load and save JSON profiles from `~/.whistleclipboard/profiles.json`
 - keep per-action sample vectors
 - compute per-action mean and standard deviation
 - classify new events using normalized feature distance
 
-### `voiceclipboard/learning.py`
+### `whistleclipboard/learning.py`
 
 Owns the interactive learning flow.
 
@@ -91,7 +91,7 @@ Responsibilities:
 - run the post-trigger feedback loop
 - reinforce or correct profiles over time
 
-### `voiceclipboard/actions.py`
+### `whistleclipboard/actions.py`
 
 Owns OS-level actions.
 
@@ -101,7 +101,7 @@ Current implementation:
 
 Future ports should extend only this module and keep the rest of the app unchanged.
 
-### `voiceclipboard/main.py`
+### `whistleclipboard/main.py`
 
 Coordinates the full runtime:
 

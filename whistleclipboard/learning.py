@@ -7,9 +7,9 @@ from queue import Empty
 
 import numpy as np
 
-from voiceclipboard.config import AppConfig
-from voiceclipboard.features import FeatureVector, extract_features
-from voiceclipboard.model import LearnedSoundModel
+from whistleclipboard.config import AppConfig
+from whistleclipboard.features import FeatureVector, extract_features
+from whistleclipboard.model import LearnedSoundModel
 
 
 @dataclass

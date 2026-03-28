@@ -1,6 +1,6 @@
-# VoiceClipboard
+# WhistleClipboard
 
-VoiceClipboard is a small, clean, hackable Python CLI that listens to the microphone, detects short whistle-like spikes, and maps them to clipboard shortcuts.
+WhistleClipboard is a small, clean, hackable Python CLI that listens to the microphone, detects short whistle-like spikes, and maps them to clipboard shortcuts.
 
 This is an early-stage alpha project. Suggestions, experiments, bug reports, and contributions are very welcome.
 
@@ -27,7 +27,7 @@ The project is intentionally simple:
 - Classic pattern detection for single and double triggers
 - Interactive learning mode for custom sound triggers
 - Feature extraction using RMS, dominant frequency, duration and zero crossing rate
-- Local profile storage in `~/.voiceclipboard/profiles.json`
+- Local profile storage in `~/.whistleclipboard/profiles.json`
 - Learned detection with a lightweight statistical distance model
 - Optional feedback loop to reinforce or correct detections
 - Cooldown protection to avoid repeated accidental shortcuts
@@ -37,7 +37,7 @@ The project is intentionally simple:
 ## Project Structure
 
 ```text
-VoiceClipboard/
+WhistleClipboard/
 ├── main.py
 ├── requirements.txt
 ├── README.md
@@ -45,7 +45,7 @@ VoiceClipboard/
 │   ├── ARCHITECTURE.md
 │   ├── ROADMAP.md
 │   └── TUNING.md
-└── voiceclipboard/
+└── whistleclipboard/
     ├── actions.py
     ├── audio.py
     ├── config.py
@@ -94,19 +94,19 @@ pip install -e .
 3. Teach a sound for copy:
 
 ```bash
-voiceclipboard --learn copy
+whistleclipboard --learn copy
 ```
 
 4. Teach a different sound for paste:
 
 ```bash
-voiceclipboard --learn paste
+whistleclipboard --learn paste
 ```
 
 5. Start detection mode:
 
 ```bash
-voiceclipboard --debug
+whistleclipboard --debug
 ```
 
 6. Focus another app and use it normally. No terminal prompt is shown by default.
@@ -114,7 +114,7 @@ voiceclipboard --debug
 7. If you want interactive reinforcement in the terminal, use:
 
 ```bash
-voiceclipboard --debug --feedback
+whistleclipboard --debug --feedback
 ```
 
 If no profiles exist yet, the app falls back to classic mode:
@@ -141,7 +141,7 @@ python main.py
 Installed CLI:
 
 ```bash
-voiceclipboard
+whistleclipboard
 ```
 
 Useful options:
@@ -152,7 +152,7 @@ python main.py --threshold 0.09
 python main.py --calibrate 4
 python main.py --learn copy
 python main.py --learn paste
-voiceclipboard --learn copy
+whistleclipboard --learn copy
 ```
 
 CLI flags:
@@ -187,7 +187,7 @@ During learning the app:
 - records 6 samples by default
 - waits for a short spike-like sound each round
 - extracts the same feature vector used during detection
-- stores samples locally in `~/.voiceclipboard/profiles.json`
+- stores samples locally in `~/.whistleclipboard/profiles.json`
 
 Stored JSON shape:
 
@@ -235,7 +235,7 @@ Then the pattern detector applies timing rules:
 
 ## Learned Detection
 
-If learned profiles exist, VoiceClipboard switches to learned mode automatically.
+If learned profiles exist, WhistleClipboard switches to learned mode automatically.
 
 For each captured sound event it:
 
@@ -274,7 +274,7 @@ If the answer is:
 
 ## Tuning
 
-Most useful knobs live in `voiceclipboard/config.py`:
+Most useful knobs live in `whistleclipboard/config.py`:
 
 - `threshold`
 - `peak_threshold`
@@ -299,7 +299,7 @@ The current local defaults are tuned to be more sensitive to softer whistles tha
 
 The audio, feature extraction and model parts are already cross-platform friendly.
 
-The only platform-specific part is shortcut execution in `voiceclipboard/actions.py`.
+The only platform-specific part is shortcut execution in `whistleclipboard/actions.py`.
 
 To support Linux and Windows later, extend that file with alternative key simulation backends such as:
 

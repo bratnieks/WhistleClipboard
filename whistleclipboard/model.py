@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from voiceclipboard.features import FeatureVector
+from whistleclipboard.features import FeatureVector
 
 ACTIONS = ("copy", "paste")
 STD_FLOOR = np.array([0.03, 180.0, 0.05, 0.04], dtype=np.float32)

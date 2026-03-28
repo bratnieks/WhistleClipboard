@@ -1,4 +1,4 @@
-from voiceclipboard.main import main
+from whistleclipboard.main import main
 
 
 if __name__ == "__main__":

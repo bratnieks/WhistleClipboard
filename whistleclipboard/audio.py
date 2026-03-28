@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 import sounddevice as sd
 
-from voiceclipboard.config import AppConfig
+from whistleclipboard.config import AppConfig
 
 
 @dataclass

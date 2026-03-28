@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from voiceclipboard.config import AppConfig
+from whistleclipboard.config import AppConfig
 
 
 @dataclass
