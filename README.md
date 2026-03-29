@@ -173,6 +173,7 @@ Wrapper script:
 
 ```bash
 ./run.sh run
+./run.sh debug
 ./run.sh learn copy
 ./run.sh learn paste
 ./run.sh feedback

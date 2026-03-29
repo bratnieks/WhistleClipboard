@@ -1,12 +1,31 @@
 from __future__ import annotations
 
 import argparse
+import signal
 import statistics
+from contextlib import contextmanager
 from typing import Iterable
 
 from whistleclipboard.config import AppConfig
 
 LEARNABLE_ACTIONS = ("copy", "paste")
+
+
+@contextmanager
+def interrupt_guard():
+    previous_int = signal.getsignal(signal.SIGINT)
+    previous_term = signal.getsignal(signal.SIGTERM)
+
+    def _raise_stop(signum, frame) -> None:  # type: ignore[unused-argument]
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, _raise_stop)
+    signal.signal(signal.SIGTERM, _raise_stop)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, previous_int)
+        signal.signal(signal.SIGTERM, previous_term)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -91,29 +110,31 @@ def run_learn_mode(config: AppConfig, action: str) -> int:
     model = LearnedSoundModel(ProfileStore(config.profile_path))
 
     try:
-        listener.start()
-        print(f"[LEARN MODE] Recording samples for {action.upper()}")
-        print(f"[LEARN MODE] Profiles will be stored at {config.profile_path}")
-        model.reset_action(action)
-        print(f"[LEARN MODE] Reset previous samples for {action.upper()}.")
-        learned = learn_action_samples(
-            action=action,
-            listener=listener,
-            recorder=recorder,
-            model=model,
-            sample_rate=config.sample_rate,
-            sample_count=config.learn_sample_count,
-            timeout=config.learn_timeout_s,
-            max_attempts=config.learn_max_attempts,
-        )
-        if learned >= config.learn_sample_count:
-            print(f"[LEARN MODE] {action.upper()} now has {model.sample_count(action)} samples.")
-        else:
-            print(
-                f"[LEARN MODE] Finished early with {learned}/{config.learn_sample_count} "
-                f"new samples for {action.upper()}."
+        with interrupt_guard():
+            listener.start()
+            print(f"[LEARN MODE] Recording samples for {action.upper()}")
+            print(f"[LEARN MODE] Profiles will be stored at {config.profile_path}")
+            print("[LEARN MODE] Press Ctrl+C to stop.")
+            model.reset_action(action)
+            print(f"[LEARN MODE] Reset previous samples for {action.upper()}.")
+            learned = learn_action_samples(
+                action=action,
+                listener=listener,
+                recorder=recorder,
+                model=model,
+                sample_rate=config.sample_rate,
+                sample_count=config.learn_sample_count,
+                timeout=config.learn_timeout_s,
+                max_attempts=config.learn_max_attempts,
             )
-        return 0
+            if learned >= config.learn_sample_count:
+                print(f"[LEARN MODE] {action.upper()} now has {model.sample_count(action)} samples.")
+            else:
+                print(
+                    f"[LEARN MODE] Finished early with {learned}/{config.learn_sample_count} "
+                    f"new samples for {action.upper()}."
+                )
+            return 0
     except KeyboardInterrupt:
         print("\n[STOPPED]")
         return 0
@@ -137,43 +158,45 @@ def run_learned_detection(config: AppConfig, feedback_enabled: bool = False) -> 
     model = LearnedSoundModel(ProfileStore(config.profile_path))
 
     try:
-        listener.start()
+        with interrupt_guard():
+            listener.start()
 
-        if config.calibration_seconds > 0:
-            calibrate(listener, spike_detector, config.calibration_seconds)
+            if config.calibration_seconds > 0:
+                calibrate(listener, spike_detector, config.calibration_seconds)
 
-        print("[LISTENING]")
-        print(f"[MODEL] Loading profiles from {config.profile_path}")
+            print("[LISTENING]")
+            print("[LISTENING] Press Ctrl+C to stop.")
+            print(f"[MODEL] Loading profiles from {config.profile_path}")
 
-        while True:
-            event = recorder.wait_for_event(listener, timeout=None)
-            if event is None:
-                continue
+            while True:
+                event = recorder.wait_for_event(listener, timeout=1.0)
+                if event is None:
+                    continue
 
-            feature = extract_features(event.samples, config.sample_rate)
-            action_name, distance = model.classify(feature)
+                feature = extract_features(event.samples, config.sample_rate)
+                action_name, distance = model.classify(feature)
 
-            if action_name is None:
-                print("[MODEL] No learned profiles found. Run with --learn copy or --learn paste first.")
-                return 1
+                if action_name is None:
+                    print("[MODEL] No learned profiles found. Run with --learn copy or --learn paste first.")
+                    return 1
 
-            print("[DETECTED SPIKE]")
-            if config.debug:
-                print(f"[MATCH] distance={distance:.3f}")
-                print(f"[MATCH] {format_feature_vector(feature)}")
+                print("[DETECTED SPIKE]")
+                if config.debug:
+                    print(f"[MATCH] distance={distance:.3f}")
+                    print(f"[MATCH] {format_feature_vector(feature)}")
 
-            if distance is not None and distance > config.match_distance_threshold:
-                print(
-                    "[MODEL] Closest profile was too far away "
-                    f"(distance={distance:.3f}). Ignoring event."
-                )
-                continue
+                if distance is not None and distance > config.match_distance_threshold:
+                    print(
+                        "[MODEL] Closest profile was too far away "
+                        f"(distance={distance:.3f}). Ignoring event."
+                    )
+                    continue
 
-            if feedback_enabled:
-                resolved_action = resolve_feedback_action(model, action_name, feature)
-            else:
-                resolved_action = action_name
-            trigger_action(resolved_action, actions)
+                if feedback_enabled:
+                    resolved_action = resolve_feedback_action(model, action_name, feature)
+                else:
+                    resolved_action = action_name
+                trigger_action(resolved_action, actions)
 
     except KeyboardInterrupt:
         print("\n[STOPPED]")
@@ -193,29 +216,31 @@ def run_classic_detection(config: AppConfig) -> int:
     actions = ActionExecutor()
 
     try:
-        listener.start()
+        with interrupt_guard():
+            listener.start()
 
-        if config.calibration_seconds > 0:
-            calibrate(listener, spike_detector, config.calibration_seconds)
-        print("[LISTENING]")
-        print("[MODEL] No learned profiles found, using classic single/double spike mode.")
+            if config.calibration_seconds > 0:
+                calibrate(listener, spike_detector, config.calibration_seconds)
+            print("[LISTENING]")
+            print("[LISTENING] Press Ctrl+C to stop.")
+            print("[MODEL] No learned profiles found, using classic single/double spike mode.")
 
-        while True:
-            chunk = listener.read(timeout=1.0)
-            metrics = spike_detector.analyze(chunk.samples)
+            while True:
+                chunk = listener.read(timeout=1.0)
+                metrics = spike_detector.analyze(chunk.samples)
 
-            if config.debug:
-                log_debug(metrics.rms, metrics.peak, metrics.high_freq_ratio)
+                if config.debug:
+                    log_debug(metrics.rms, metrics.peak, metrics.high_freq_ratio)
 
-            if metrics.is_spike:
-                print("[DETECTED SPIKE]")
-                action_name = pattern_detector.register_spike(chunk.captured_at)
-                if action_name:
-                    trigger_action(action_name, actions)
+                if metrics.is_spike:
+                    print("[DETECTED SPIKE]")
+                    action_name = pattern_detector.register_spike(chunk.captured_at)
+                    if action_name:
+                        trigger_action(action_name, actions)
 
-            pending_action = pattern_detector.flush_pending(chunk.captured_at)
-            if pending_action:
-                trigger_action(pending_action, actions)
+                pending_action = pattern_detector.flush_pending(chunk.captured_at)
+                if pending_action:
+                    trigger_action(pending_action, actions)
 
     except KeyboardInterrupt:
         print("\n[STOPPED]")
