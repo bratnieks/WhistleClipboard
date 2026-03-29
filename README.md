@@ -20,6 +20,13 @@ The project is intentionally simple:
 - low dependency count
 - easy to tune
 
+## Quick Links
+
+- Quick start: [QUICKSTART.md](/Users/brunoratnieks/dark-agent/WhistleClipboard/QUICKSTART.md)
+- Architecture: [docs/ARCHITECTURE.md](/Users/brunoratnieks/dark-agent/WhistleClipboard/docs/ARCHITECTURE.md)
+- Tuning guide: [docs/TUNING.md](/Users/brunoratnieks/dark-agent/WhistleClipboard/docs/TUNING.md)
+- Roadmap: [docs/ROADMAP.md](/Users/brunoratnieks/dark-agent/WhistleClipboard/docs/ROADMAP.md)
+
 ## Features
 
 - Continuous microphone listening with `sounddevice`
@@ -34,28 +41,6 @@ The project is intentionally simple:
 - Debug logging for live tuning
 - Basic ambient calibration mode
 
-## Project Structure
-
-```text
-WhistleClipboard/
-├── main.py
-├── requirements.txt
-├── README.md
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── ROADMAP.md
-│   └── TUNING.md
-└── whistleclipboard/
-    ├── actions.py
-    ├── audio.py
-    ├── config.py
-    ├── detector.py
-    ├── features.py
-    ├── learning.py
-    ├── main.py
-    └── model.py
-```
-
 ## Requirements
 
 - Python 3.9+
@@ -64,87 +49,14 @@ WhistleClipboard/
 
 ## Installation
 
-Create a virtual environment and install dependencies:
-
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e .
 ```
-
-## Quickstart
-
-If you want to test the project right now on macOS:
-
-1. Install and activate the environment:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e .
-```
-
-Fastest local workflow:
-
-```bash
-./run.sh learn copy
-./run.sh learn paste
-./run.sh run
-```
-
-2. Give your terminal app:
-
-- Microphone permission
-- Accessibility permission
-
-3. Teach a sound for copy:
-
-```bash
-./run.sh learn copy
-```
-
-4. Teach a different sound for paste:
-
-```bash
-./run.sh learn paste
-```
-
-5. Start detection mode:
-
-```bash
-./run.sh run
-```
-
-6. Focus another app and use it normally. No terminal prompt is shown by default.
-
-7. If you want interactive reinforcement in the terminal, use:
-
-```bash
-./run.sh feedback
-```
-
-If no profiles exist yet, the app falls back to classic mode:
-
-- one spike -> copy
-- two quick spikes -> paste
-## macOS Permissions
-
-On macOS, the terminal app used to run the CLI needs:
-
-- Microphone permission
-- Accessibility permission
-
-Accessibility permission is required because the app uses `osascript` with `System Events` to send `Cmd+C` and `Cmd+V`.
 
 ## Usage
-
-Run the tool:
-
-```bash
-python main.py
-```
 
 Installed CLI:
 
@@ -158,18 +70,7 @@ Convenience script:
 ./run.sh help
 ```
 
-Useful options:
-
-```bash
-python main.py --debug
-python main.py --threshold 0.09
-python main.py --calibrate 4
-python main.py --learn copy
-python main.py --learn paste
-whistleclipboard --learn copy
-```
-
-Wrapper script:
+Wrapper commands:
 
 ```bash
 ./run.sh run
@@ -177,6 +78,16 @@ Wrapper script:
 ./run.sh learn copy
 ./run.sh learn paste
 ./run.sh feedback
+```
+
+Useful CLI options:
+
+```bash
+python main.py --debug
+python main.py --threshold 0.09
+python main.py --calibrate 4
+python main.py --learn copy
+python main.py --learn paste
 ```
 
 CLI flags:
@@ -192,42 +103,40 @@ CLI flags:
 - `--feedback`
   Enables interactive reinforcement prompts after learned detections.
 
-## Learn Mode
+## macOS Permissions
 
-Teach the tool a custom sound for `copy`:
+The terminal app used to run the CLI needs:
 
-```bash
-python main.py --learn copy
-```
+- Microphone permission
+- Accessibility permission
 
-Teach the tool a custom sound for `paste`:
+Accessibility permission is required because the app uses `osascript` with `System Events` to send `Cmd+C` and `Cmd+V`.
 
-```bash
-python main.py --learn paste
-```
+## How Detection Works
 
-During learning the app:
+Each microphone chunk is analyzed with three simple signals:
 
-- records 6 samples by default
-- waits for a short spike-like sound each round
-- extracts the same feature vector used during detection
-- stores samples locally in `~/.whistleclipboard/profiles.json`
+- RMS energy
+- peak amplitude
+- ratio of spectral energy in a whistle-friendly high-frequency band
 
-Stored JSON shape:
+A chunk is considered a spike only when all three thresholds pass. This helps reject many low-frequency noises and broad ambient sounds.
 
-```json
-{
-  "copy": [
-    {
-      "rms": 0.11,
-      "dominant_frequency": 2142.4,
-      "duration": 0.31,
-      "zero_crossing_rate": 0.22
-    }
-  ],
-  "paste": []
-}
-```
+Classic mode then applies timing rules:
+
+- first spike starts a short waiting window
+- second spike inside the window triggers paste
+- if no second spike arrives in time, copy is fired
+- cooldown suppresses repeated accidental activations
+
+Learned mode captures short whistle events and compares feature vectors using:
+
+- RMS
+- dominant frequency
+- duration
+- zero crossing rate
+
+Profiles are stored locally in `~/.whistleclipboard/profiles.json`.
 
 ## Example Output
 
@@ -240,120 +149,26 @@ Stored JSON shape:
 [ACTION: PASTE]
 ```
 
-## How Detection Works
-
-Each microphone chunk is analyzed with three simple signals:
-
-- RMS energy
-- peak amplitude
-- ratio of spectral energy in a whistle-friendly high-frequency band
-
-A chunk is considered a spike only when all three thresholds pass. This helps reject many low-frequency noises and broad ambient sounds.
-
-Then the pattern detector applies timing rules:
-
-- first spike starts a short waiting window
-- second spike inside the window triggers paste
-- if no second spike arrives in time, copy is fired
-- cooldown suppresses repeated accidental activations
-
-## Learned Detection
-
-If learned profiles exist, WhistleClipboard switches to learned mode automatically.
-
-For each captured sound event it:
-
-- captures the short event after spike onset
-- extracts:
-  RMS
-  dominant frequency
-  duration
-  zero crossing rate
-- compares that vector against the learned `copy` and `paste` profiles
-- triggers the closest valid match
-
-The model stays intentionally lightweight:
-
-- local JSON storage
-- raw sample vectors per action
-- per-action mean and standard deviation
-- normalized distance matching
-
-## Feedback Loop
-
-Feedback is optional and disabled by default so the app can control other applications without the terminal stealing focus.
-
-If you start with `--feedback`, after each learned trigger the CLI asks:
+## Project Structure
 
 ```text
-Detected: COPY  [y=yes / n=no / Enter=yes]
+WhistleClipboard/
+├── main.py
+├── QUICKSTART.md
+├── README.md
+├── requirements.txt
+├── run.sh
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── ROADMAP.md
+│   └── TUNING.md
+└── whistleclipboard/
+    ├── actions.py
+    ├── audio.py
+    ├── config.py
+    ├── detector.py
+    ├── features.py
+    ├── learning.py
+    ├── main.py
+    └── model.py
 ```
-
-If the answer is:
-
-- `y` or `Enter`
-  the detected sample reinforces the predicted action
-- `n`
-  the app automatically assumes the opposite action and updates the learned profile
-
-## Tuning
-
-Most useful knobs live in `whistleclipboard/config.py`:
-
-- `threshold`
-- `peak_threshold`
-- `high_freq_ratio_threshold`
-- `release_threshold`
-- `release_peak_threshold`
-- `double_spike_window_s`
-- `action_cooldown_s`
-- `match_distance_threshold`
-
-Start with:
-
-```bash
-python main.py --calibrate 4
-python main.py --debug
-```
-
-Then whistle a few times and adjust thresholds based on the logs.
-
-The current local defaults are tuned to be more sensitive to softer whistles than the first MVP build.
-## Portability Notes
-
-The audio, feature extraction and model parts are already cross-platform friendly.
-
-The only platform-specific part is shortcut execution in `whistleclipboard/actions.py`.
-
-To support Linux and Windows later, extend that file with alternative key simulation backends such as:
-
-- `xdotool` or `ydotool` on Linux
-- PowerShell or a Python automation backend on Windows
-
-## Limitations
-
-- Detection is heuristic-based, not semantic audio recognition
-- Very noisy environments may require manual tuning
-- Current shortcut execution is implemented only for macOS
-- The app assumes the active app should receive `Cmd+C` or `Cmd+V`
-
-## Development
-
-Quick sanity check:
-
-```bash
-python main.py --help
-```
-
-Recommended next improvements:
-
-- input device selection
-- configurable action mapping
-- better per-machine calibration persistence
-- Linux and Windows shortcut support
-
-## Documentation
-
-- `docs/ARCHITECTURE.md` for module responsibilities and flow
-- `docs/TUNING.md` for tuning guidance
-- `docs/ROADMAP.md` for next steps
